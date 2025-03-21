@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    kotlin("kapt")
 }
 
 android {
@@ -51,6 +52,13 @@ android {
 
 dependencies {
     val lifecycle_version = "2.8.7"
+    val room_version = "2.6.1" // Verifique a versão mais recente
+
+    //para o banco de dados.
+    implementation("androidx.room:room-runtime:$room_version")
+    kapt("androidx.room:room-compiler:$room_version") // Para compilar as anotações do Room
+    implementation("androidx.room:room-ktx:$room_version") // Extensão para Kotlin Coroutines
+
 
 // ViewModel
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version")
