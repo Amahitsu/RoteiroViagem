@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.example.roteiroviagem"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.example.roteiroviagem"
@@ -50,7 +50,14 @@ android {
 }
 
 dependencies {
+    val lifecycle_version = "2.8.7"
 
+// ViewModel
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version")
+
+// ViewModel utilities for Compose
+    implementation("androidx.compose.material:material-icons-extended:1.4.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycle_version")
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("androidx.activity:activity-compose:1.10.1")
