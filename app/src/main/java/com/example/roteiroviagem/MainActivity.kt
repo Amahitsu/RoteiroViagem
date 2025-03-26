@@ -6,10 +6,13 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.roteiroviagem.screens.LoginScreen
+import com.example.roteiroviagem.screens.RegisterUser
 import com.example.roteiroviagem.ui.theme.RoteiroViagemTheme
 
 class MainActivity : ComponentActivity() {
@@ -22,7 +25,8 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    Greeting("Android")
+                    // Chama a função de navegação
+                    AppNavigation()
                 }
             }
         }
@@ -30,17 +34,20 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
+fun AppNavigation() {
+    val navController = rememberNavController()
 
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    RoteiroViagemTheme {
-        Greeting("Android")
+    NavHost(navController = navController, startDestination = "login") {
+        composable("login") {
+            // Passa o navController.navigate() como onNavigateTo para LoginScreen
+            LoginScreen(onNavigateTo = { route ->
+                navController.navigate(route)  // Navega para a tela especificada
+            })
+        }
+        composable("registerUser") {
+            RegisterUser(onNavigateTo = { route ->
+                navController.navigate(route)  // A tela home
+            })
+        }
     }
 }
