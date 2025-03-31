@@ -51,21 +51,32 @@ android {
 }
 
 dependencies {
+
     val lifecycle_version = "2.8.7"
     val room_version = "2.6.1" // Verifique a versão mais recente
 
     val nav_version = "2.8.9"
     implementation("androidx.navigation:navigation-compose:$nav_version")
-
+    //botton navigation
+    implementation("androidx.compose.material:material:1.7.8")
 
     //para o banco de dados.
     implementation("androidx.room:room-runtime:$room_version")
     kapt("androidx.room:room-compiler:$room_version") // Para compilar as anotações do Room
     implementation("androidx.room:room-ktx:$room_version") // Extensão para Kotlin Coroutines
-
+    implementation ("androidx.navigation:navigation-compose:2.5.1")
 
 // ViewModel
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version")
+
+    implementation("androidx.navigation:navigation-compose:2.7.5") // ou a versão mais recente
+    implementation("androidx.compose.material3:material3:1.1.2") // ou a versão mais recente
+    implementation("androidx.compose.material:material:1.5.4") // ou a versão mais recente
+    implementation("androidx.compose.ui:ui:1.5.4") // ou a versão mais recente
+    implementation("androidx.compose.ui:ui-tooling-preview:1.5.4") // ou a versão mais recente
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.5.4") // ou a versão mais recente
+    debugImplementation("androidx.compose.ui:ui-tooling:1.5.4") // ou a versão mais recente
+    debugImplementation("androidx.compose.ui:ui-test-manifest:1.5.4") // ou a versão mais recente
 
 // ViewModel utilities for Compose
     implementation("androidx.compose.material:material-icons-extended:1.4.0")

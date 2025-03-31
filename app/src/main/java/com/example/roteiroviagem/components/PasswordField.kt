@@ -19,13 +19,13 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.Modifier
 
 @Composable
-fun PasswordField(password: String, onPasswordChange: (String) -> Unit) {
+fun PasswordField(senha: String, onPasswordChange: (String) -> Unit) {
     // Corrigindo a variável de estado para controlar a visibilidade da senha
     var passwordVisible by remember { mutableStateOf(false) }
 
     // TextField com ícone de alternância de visibilidade
     OutlinedTextField(
-        value = password,
+        value = senha,
         onValueChange = onPasswordChange,
         label = { Text("Password") },
         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
