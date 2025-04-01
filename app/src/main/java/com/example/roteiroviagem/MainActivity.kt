@@ -65,73 +65,46 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MyApp() {
     val navController = rememberNavController()
+
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(text = "My app")
-                }
-            )
-        },
+        topBar = { TopAppBar(title = { Text(text = "My App") }) },
         bottomBar = {
-            BottomNavigation {
-                val backStack = navController.currentBackStackEntryAsState()
-                val currentDestination = backStack.value?.destination
-                BottomNavigationItem(
-                    selected =
-                    currentDestination?.hierarchy?.any {
-                        it.route == "MainScreen"
-                    } == true ,
-                    onClick = { navController.navigate("MainScreen") },
-                    icon = {
-                        Icon(imageVector = Icons.Default.Home, contentDescription = "Main Screen")
-                    }
-                )
-                BottomNavigationItem(
-                    selected =
-                    currentDestination?.hierarchy?.any {
-                        it.route == "Profile"
-                    } == true ,
-                    onClick = { navController.navigate("Profile") },
-                    icon = {
-                        Icon(imageVector = Icons.Default.Person, contentDescription = "Profile")
-                    }
-                )
-                BottomNavigationItem(
-                    selected =
-                    currentDestination?.hierarchy?.any {
-                        it.route == "About"
-                    } == true ,
-                    onClick = { navController.navigate("About") },
-                    icon = {
-                        Icon(imageVector = Icons.Default.Info, contentDescription = "About")
-                    }
-                )
+            val backStack = navController.currentBackStackEntryAsState()
+            val currentDestination = backStack.value?.destination?.route
 
+            // Exibe a BottomNavigation apenas nas telas desejadas
+            if (currentDestination in listOf("MainScreen", "Profile", "About")) {
+                BottomNavigation {
+                    BottomNavigationItem(
+                        selected = currentDestination == "Profile",
+                        onClick = { navController.navigate("Profile") },
+                        icon = { Icon(imageVector = Icons.Default.Person, contentDescription = "Profile") }
+                    )
+                    BottomNavigationItem(
+                        selected = currentDestination == "MainScreen",
+                        onClick = { navController.navigate("MainScreen") },
+                        icon = { Icon(imageVector = Icons.Default.Home, contentDescription = "Main Screen") }
+                    )
+                    BottomNavigationItem(
+                        selected = currentDestination == "About",
+                        onClick = { navController.navigate("About") },
+                        icon = { Icon(imageVector = Icons.Default.Info, contentDescription = "About") }
+                    )
+                }
             }
         }
-    ) {
-        Column(
-            modifier = Modifier.padding(it)
+    ) { innerPadding ->
+        NavHost(
+            navController = navController,
+            startDestination = "Login",
+            modifier = Modifier.padding(innerPadding)
         ) {
-            NavHost(navController = navController, startDestination = "Login") {
-                composable("MainScreen") {
-                    MainScreen()
-                }
-                composable("Login") {
-                    LoginScreen(onNavigateTo = {})
-                }
-                composable("RegisterUser"    ) {
-                    RegisterUser(onNavigateTo = {})
-                }
-            }
+            composable("MainScreen") { MainScreen() }
+            composable("Login") { LoginScreen(onNavigateTo = { route -> navController.navigate(route) }) }
+            composable("RegisterUser") { RegisterUser(onNavigateTo = { route -> navController.navigate(route) }) }
         }
-
     }
-
 }
-
-
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
