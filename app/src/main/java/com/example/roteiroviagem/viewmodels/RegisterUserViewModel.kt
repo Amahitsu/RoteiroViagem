@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.asStateFlow
 
 data class RegisterUser(
     val userRegister: String = "",
+    val nameRegister: String = "",
     val emailRegister : String = "",
     val passwordRegister: String = "",
     val confirmPassword: String = ""
@@ -24,6 +25,9 @@ class RegisterUserViewModel : ViewModel() {
 
     }
 
+    fun onRegisterName(userRegister: String){
+        _uiState.value = _uiState.value.copy()
+    }
     fun onRegisterEmail(emailRegister: String){
         _uiState.value = _uiState.value.copy(emailRegister = emailRegister)
     }

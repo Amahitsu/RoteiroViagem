@@ -67,7 +67,7 @@ fun MyApp() {
     val navController = rememberNavController()
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text(text = "My App") }) },
+        topBar = { TopAppBar(title = { Text(text = "RouterTravel") }) },
         bottomBar = {
             val backStack = navController.currentBackStackEntryAsState()
             val currentDestination = backStack.value?.destination?.route

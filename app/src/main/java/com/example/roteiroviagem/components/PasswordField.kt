@@ -27,7 +27,7 @@ fun PasswordField(senha: String, onPasswordChange: (String) -> Unit) {
     OutlinedTextField(
         value = senha,
         onValueChange = onPasswordChange,
-        label = { Text("Password") },
+        label = { Text("Senha") },
         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
         trailingIcon = {
             // Ícone de visibilidade
@@ -36,6 +36,7 @@ fun PasswordField(senha: String, onPasswordChange: (String) -> Unit) {
                 Icon(imageVector = image, contentDescription = "Toggle password visibility")
             }
         },
+        
         modifier = Modifier.fillMaxWidth()
     )
 }

@@ -30,6 +30,7 @@ fun MyTextField(
     // Se for um campo de senha, podemos usar o PasswordField
     if (isPassword) {
         PasswordField(senha = value, onPasswordChange = onValueChange)
+
     } else {
         OutlinedTextField(
             value = value,
