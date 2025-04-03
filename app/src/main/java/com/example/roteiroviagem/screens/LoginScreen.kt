@@ -100,7 +100,7 @@ fun LoginScreenFields(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-        Text(text = "Já tem uma conta? Faça seu registro",
+        Text(text = "Não tem uma conta? Faça seu registro",
             fontSize = 15.sp,
             color = Color.Gray,
             modifier = Modifier

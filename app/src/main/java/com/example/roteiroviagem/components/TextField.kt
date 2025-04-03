@@ -11,6 +11,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 
 @Composable
 fun MyTextField(
@@ -18,8 +19,9 @@ fun MyTextField(
     value: String,
     onValueChange: (String) -> Unit,
     visualTransformation: VisualTransformation = VisualTransformation.None,
-    isPassword: Boolean = false // Adicionando parâmetro para controlar se é um campo de senha
-){
+    isPassword: Boolean = false,
+    modifier: Modifier = Modifier // Adiciona modifier como parâmetro opcional
+) {
     var isTouched = remember {
         mutableStateOf(false)
     }
@@ -27,10 +29,27 @@ fun MyTextField(
         FocusRequester()
     }
 
-    // Se for um campo de senha, podemos usar o PasswordField
+    // Se for um campo de senha, aplica a transformação de senha
     if (isPassword) {
-        PasswordField(senha = value, onPasswordChange = onValueChange)
-
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            visualTransformation = PasswordVisualTransformation(),
+            singleLine = true,
+            label = { Text(text = label) },
+            modifier = modifier
+                .fillMaxWidth()
+                .focusRequester(focusRequester)
+                .onFocusEvent {
+                    if (it.hasFocus) isTouched.value = true
+                },
+            isError = isTouched.value && value.isBlank(),
+            supportingText = {
+                if (isTouched.value && value.isBlank()) {
+                    Text(text = "Campo ${label} Obrigatório")
+                }
+            }
+        )
     } else {
         OutlinedTextField(
             value = value,
@@ -40,22 +59,17 @@ fun MyTextField(
             },
             visualTransformation = visualTransformation,
             singleLine = true,
-            label = {
-                Text(text = label)
-            },
-            modifier = Modifier
+            label = { Text(text = label) },
+            modifier = modifier
                 .fillMaxWidth()
                 .focusRequester(focusRequester)
                 .onFocusEvent {
-                    if (it.hasFocus)
-                        isTouched.value = true
+                    if (it.hasFocus) isTouched.value = true
                 },
-
             isError = isTouched.value && value.isBlank(),
-
             supportingText = {
-                if (isTouched.value && value.isBlank()){
-                    Text(text = "Campo ${label} Obrigatório" )
+                if (isTouched.value && value.isBlank()) {
+                    Text(text = "Campo ${label} Obrigatório")
                 }
             }
         )
