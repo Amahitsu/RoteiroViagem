@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -25,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -34,10 +36,17 @@ import com.example.roteiroviagem.components.MyTextField
 import com.example.roteiroviagem.ui.theme.RoteiroViagemTheme
 import com.example.roteiroviagem.viewmodels.RegisterUserViewModel
 import com.example.roteiroviagem.components.EmailValidator
+import com.example.roteiroviagem.components.ErrorDialog
+import com.example.roteiroviagem.database.AppDatabase
+import com.example.roteiroviagem.viewmodels.RegisterUserViewModelFactory
 
 @Composable
 fun RegisterUser(onNavigateTo: (String) -> Unit) {  // Adicionando o parâmetro de navegação
-    val registerUserViewModel: RegisterUserViewModel = viewModel()
+    val ctx = LocalContext.current
+    val userDao = AppDatabase.getDatabase(ctx).userDao()
+    val registerUserViewModel: RegisterUserViewModel = viewModel(
+        factory = RegisterUserViewModelFactory(userDao)
+    )
 
     Scaffold {
         Column(
@@ -55,12 +64,14 @@ fun RegisterUser(onNavigateTo: (String) -> Unit) {  // Adicionando o parâmetro 
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterUserField(
     registerUserViewModel: RegisterUserViewModel,
     onNavigateTo: (String) -> Unit
 ) {
-    val registerUser = registerUserViewModel.uiState.collectAsState()
+    var registerUser = registerUserViewModel.uiState.collectAsState()
+    val ctx = LocalContext.current
     var showDialog by remember { mutableStateOf(false) } // Estado para mostrar o alerta
     LaunchedEffect(registerUser.value.passwordError) {
         showDialog = registerUser.value.passwordError != null &&
@@ -188,12 +199,23 @@ fun RegisterUserField(
 
 
             Button(
-                onClick = { onNavigateTo("Login") },
+                onClick = { onNavigateTo("Login")
+                          registerUserViewModel.register()},
                 modifier = Modifier.align(Alignment.CenterHorizontally),
                 enabled = registerUser.value.isFormValid
             ) {
                 Text(text = "Registrar Usuário", fontSize = 18.sp)
             }
+
+            if(registerUser.value.errorMessage.isNotBlank()){
+                ErrorDialog(
+                    error = registerUser.value.errorMessage,
+                    onDismissRequest = {
+                        registerUserViewModel.cleanDisplayValues()
+                    }
+                )
+            }
+
 
             Button(
                 onClick = { onNavigateTo("Login") },

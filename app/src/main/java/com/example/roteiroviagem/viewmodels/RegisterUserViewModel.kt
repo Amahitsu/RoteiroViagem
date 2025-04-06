@@ -1,10 +1,14 @@
 package com.example.roteiroviagem.viewmodels
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.roteiroviagem.components.EmailValidator
+import com.example.roteiroviagem.dao.UserDao
+import com.example.roteiroviagem.entity.User
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 
 data class RegisterUiState(
@@ -14,10 +18,25 @@ data class RegisterUiState(
     val passwordRegister: String = "",
     val confirmPassword: String = "",
     val passwordError: String? = null,
-    val isFormValid: Boolean = false // 🔹 Adicionado para indicar se o formulário está válido
-)
+    val errorMessage: String = "",
+    val isFormValid: Boolean = false, // 🔹 Adicionado para indicar se o formulário está válido
+    val isSaved : Boolean = false
+){
+    fun toUser(): User {
+        return User(
+            user = userRegister,
+            name = nameRegister,
+            email = emailRegister,
+            password = passwordRegister
+        )
+    }
+}
 
-class RegisterUserViewModel : ViewModel() {
+class RegisterUserViewModel(
+    private val userDao: UserDao
+) : ViewModel() {
+
+
     private val _uiState = MutableStateFlow(RegisterUiState())
     val uiState: StateFlow<RegisterUiState> = _uiState
 
@@ -69,7 +88,6 @@ class RegisterUserViewModel : ViewModel() {
         validateForm()
     }
 
-
     private fun validateForm() {
         _uiState.value = _uiState.value.copy(
             isFormValid = _uiState.value.run {
@@ -81,5 +99,22 @@ class RegisterUserViewModel : ViewModel() {
                         passwordError == null
             }
         )
+    }
+
+    fun register(){
+        try{
+
+            viewModelScope.launch {
+                userDao.insert(_uiState.value.toUser())
+                _uiState.value = _uiState.value.copy(isSaved = true)
+            }
+        }
+        catch (e: Exception){
+            _uiState.value = _uiState.value.copy(errorMessage = e.message ?: "Unknow error" )
+        }
+    }
+
+    fun cleanDisplayValues(){
+        _uiState.value = _uiState.value.copy(isSaved = false, errorMessage = "")
     }
 }
