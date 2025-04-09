@@ -112,7 +112,7 @@ fun RegisterUserField(
                 onValueChange = { registerUserViewModel.onRegisterUser(it) }
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(5.dp))
 
             //Entrada de senha
             Column(
@@ -133,7 +133,7 @@ fun RegisterUserField(
                 isPassword = true,
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(5.dp))
 
             //Confirmação de senha
             Column(
@@ -158,7 +158,7 @@ fun RegisterUserField(
                 }
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(5.dp))
 
             //Entrada de nome
             Column(
@@ -176,7 +176,7 @@ fun RegisterUserField(
                 onValueChange = { registerUserViewModel.onRegisterName(it) }
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(5.dp))
 
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -194,7 +194,7 @@ fun RegisterUserField(
             )
 
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(3.dp))
 
 
 

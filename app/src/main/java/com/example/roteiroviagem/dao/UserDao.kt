@@ -11,7 +11,7 @@ import com.example.roteiroviagem.entity.User
 @Dao
 interface UserDao {
     @Insert
-    suspend fun insert (user : User)
+    suspend fun insert(user: User)
     @Update
     suspend fun update(user: User)
     @Upsert
@@ -22,5 +22,7 @@ interface UserDao {
     suspend fun findById (id : Int) : User?
     @Query("select * from User u order by u.name")
     suspend fun findAll():List<User>
+    @Query("SELECT * FROM User WHERE user = :username")
+    suspend fun findByUsername(username: String): User?
 
 }

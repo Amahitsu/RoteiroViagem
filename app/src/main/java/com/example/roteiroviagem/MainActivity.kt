@@ -4,23 +4,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import com.example.roteiroviagem.screens.LoginScreen
-import com.example.roteiroviagem.screens.MainScreen
-import com.example.roteiroviagem.screens.RegisterUser
-import com.example.roteiroviagem.ui.theme.RoteiroViagemTheme
-
-//import android.os.Bundle
-//import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
@@ -30,19 +13,21 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-//import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-//import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material3.Surface
 import androidx.compose.material3.TopAppBar
-//import androidx.compose.runtime.Composable
-//import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.navigation.NavDestination.Companion.hierarchy
-//import androidx.navigation.compose.NavHost
-//import androidx.navigation.compose.composable
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
-
+import androidx.navigation.compose.rememberNavController
+import com.example.roteiroviagem.screens.LoginScreen
+import com.example.roteiroviagem.screens.MainScreen
+import com.example.roteiroviagem.screens.RegisterUser
+import com.example.roteiroviagem.ui.theme.RoteiroViagemTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -96,19 +81,21 @@ fun MyApp() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = "Login",
+            startDestination = "Login", // Começa na tela de Login
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable("MainScreen") { MainScreen() }
-            composable("Login") { LoginScreen(onNavigateTo = { route -> navController.navigate(route) }) }
-            composable("RegisterUser") { RegisterUser(onNavigateTo = { route -> navController.navigate(route) }) }
+            composable("Login") { LoginScreen(navController = navController) }
+            composable("MainScreen/{username}") { backStackEntry ->
+                val username = backStackEntry.arguments?.getString("username")
+                if (username != null) {
+                    MainScreen(navController = navController, username = username)
+                }
+            }
+            composable("RegisterUser") {
+                RegisterUser(onNavigateTo = { route ->
+                    navController.navigate(route)
+                })
+            }
         }
-    }
-}
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    RoteiroViagemTheme {
-        MyApp()
     }
 }

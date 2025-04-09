@@ -9,10 +9,12 @@ import com.example.roteiroviagem.entity.User
 
 @Database (
     entities = [User::class],
-    version = 1,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
+
+
     abstract fun userDao() : UserDao
 
     companion object {
