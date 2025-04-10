@@ -19,6 +19,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -58,24 +60,46 @@ fun MyApp() {
             val currentDestination = backStack.value?.destination?.route
 
             // Exibe a BottomNavigation apenas nas telas desejadas
-            if (currentDestination in listOf("MainScreen", "Profile", "About")) {
+            val showBottomBar = currentDestination?.startsWith("MainScreen") == true ||
+                    currentDestination == "Profile" ||
+                    currentDestination == "About"
+
+            var username by rememberSaveable { mutableStateOf("") }
+
+            if (showBottomBar) {
                 BottomNavigation {
                     BottomNavigationItem(
-                        selected = currentDestination == "Profile",
+                        selected = currentDestination?.startsWith("Profile") == true,
                         onClick = { navController.navigate("Profile") },
-                        icon = { Icon(imageVector = Icons.Default.Person, contentDescription = "Profile") }
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = "Profile"
+                            )
+                        }
                     )
                     BottomNavigationItem(
-                        selected = currentDestination == "MainScreen",
-                        onClick = { navController.navigate("MainScreen") },
-                        icon = { Icon(imageVector = Icons.Default.Home, contentDescription = "Main Screen") }
+                        selected = currentDestination?.startsWith("MainScreen") == true,
+                        onClick = { navController.navigate("MainScreen/$username") }, // Use um username real ou armazene em uma variável
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Default.Home,
+                                contentDescription = "Main Screen"
+                            )
+                        }
                     )
                     BottomNavigationItem(
                         selected = currentDestination == "About",
                         onClick = { navController.navigate("About") },
-                        icon = { Icon(imageVector = Icons.Default.Info, contentDescription = "About") }
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Default.Info,
+                                contentDescription = "About"
+                            )
+                        }
                     )
                 }
+
             }
         }
     ) { innerPadding ->
@@ -84,6 +108,7 @@ fun MyApp() {
             startDestination = "Login", // Começa na tela de Login
             modifier = Modifier.padding(innerPadding)
         ) {
+
             composable("Login") { LoginScreen(navController = navController) }
             composable("MainScreen/{username}") { backStackEntry ->
                 val username = backStackEntry.arguments?.getString("username")
