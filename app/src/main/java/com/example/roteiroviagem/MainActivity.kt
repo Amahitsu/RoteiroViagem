@@ -3,29 +3,45 @@ package com.example.roteiroviagem
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
+import androidx.compose.material.FabPosition
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.roteiroviagem.database.AppDatabase
+import com.example.roteiroviagem.entity.Trip
+import com.example.roteiroviagem.screens.AddTripScreen
 import com.example.roteiroviagem.screens.LoginScreen
 import com.example.roteiroviagem.screens.MainScreen
 import com.example.roteiroviagem.screens.RegisterUser
@@ -36,10 +52,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             RoteiroViagemTheme {
-                // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    color = MaterialTheme.colorScheme.primary
                 ) {
                     MyApp()
                 }
@@ -52,20 +67,36 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MyApp() {
     val navController = rememberNavController()
+    var username by rememberSaveable { mutableStateOf("") }
+
+    val backStack = navController.currentBackStackEntryAsState()
+    val currentDestination = backStack.value?.destination?.route
+
+    val showBottomBar = currentDestination?.startsWith("MainScreen") == true ||
+            currentDestination == "Profile" ||
+            currentDestination == "About"
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text(text = "RouterTravel") }) },
+        topBar = {
+                TopAppBar(
+                    title = { Text("Minhas Viagens", color = MaterialTheme.colorScheme.onPrimary) },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    ),
+                    actions = {
+                        if (currentDestination != "Login" && currentDestination != "RegisterUser") {
+                            TextButton(onClick = {
+                                navController.navigate("Login") {
+                                    popUpTo("MainScreen/{$username}") { inclusive = true }
+                                }
+                            }) {
+                                Text("Sair", color = MaterialTheme.colorScheme.onPrimary)
+                            }
+                        }
+                    }
+                )
+        },
         bottomBar = {
-            val backStack = navController.currentBackStackEntryAsState()
-            val currentDestination = backStack.value?.destination?.route
-
-            // Exibe a BottomNavigation apenas nas telas desejadas
-            val showBottomBar = currentDestination?.startsWith("MainScreen") == true ||
-                    currentDestination == "Profile" ||
-                    currentDestination == "About"
-
-            var username by rememberSaveable { mutableStateOf("") }
-
             if (showBottomBar) {
                 BottomNavigation {
                     BottomNavigationItem(
@@ -80,7 +111,11 @@ fun MyApp() {
                     )
                     BottomNavigationItem(
                         selected = currentDestination?.startsWith("MainScreen") == true,
-                        onClick = { navController.navigate("MainScreen/$username") }, // Use um username real ou armazene em uma variável
+                        onClick = {
+                            if (username.isNotBlank()) {
+                                navController.navigate("MainScreen/$username")
+                            }
+                        },
                         icon = {
                             Icon(
                                 imageVector = Icons.Default.Home,
@@ -99,20 +134,38 @@ fun MyApp() {
                         }
                     )
                 }
-
+            }
+        },
+        floatingActionButton = {
+            if (showBottomBar && username.isNotBlank()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(bottom = 10.dp), // Ajusta a altura para alinhar com a BottomBar
+                    contentAlignment = Alignment.BottomCenter
+                ) {
+                    FloatingActionButton(
+                        onClick = { navController.navigate("add_trip/$username") },
+                        containerColor = MaterialTheme.colorScheme.secondary
+                    ) {
+                        Icon(Icons.Filled.Add, contentDescription = "Adicionar Viagem")
+                    }
+                }
             }
         }
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = "Login", // Começa na tela de Login
+            startDestination = "Login",
             modifier = Modifier.padding(innerPadding)
         ) {
-
-            composable("Login") { LoginScreen(navController = navController) }
+            composable("Login") {
+                LoginScreen(navController = navController)
+            }
             composable("MainScreen/{username}") { backStackEntry ->
-                val username = backStackEntry.arguments?.getString("username")
-                if (username != null) {
+                val argUsername = backStackEntry.arguments?.getString("username")
+                if (argUsername != null) {
+                    username = argUsername
                     MainScreen(navController = navController, username = username)
                 }
             }
@@ -120,6 +173,30 @@ fun MyApp() {
                 RegisterUser(onNavigateTo = { route ->
                     navController.navigate(route)
                 })
+            }
+
+            composable("add_trip/{username}") { backStackEntry ->
+                val username = backStackEntry.arguments?.getString("username") ?: ""
+                AddTripScreen(navController = navController, username = username)
+            }
+            composable("edit_trip/{tripId}/{username}") { backStackEntry ->
+                val tripId = backStackEntry.arguments?.getString("tripId")?.toIntOrNull()
+                val username = backStackEntry.arguments?.getString("username") ?: ""
+                val context = LocalContext.current
+                val tripDao = AppDatabase.getDatabase(context).tripDao()
+                var trip by remember { mutableStateOf<Trip?>(null) }
+
+                LaunchedEffect(tripId) {
+                    trip = tripId?.let { tripDao.getById(it) }
+                }
+
+                trip?.let {
+                    AddTripScreen(
+                        navController = navController,
+                        username = username,
+                        existingTrip = it
+                    )
+                }
             }
         }
     }
