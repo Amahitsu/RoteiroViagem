@@ -96,8 +96,8 @@ fun AddTripScreen(navController: NavController, username: String, existingTrip: 
                 },
                 navigationIcon = {
                     IconButton(onClick = {
-                        navController.navigate("menu/$username") {
-                            popUpTo("menu/$username") { inclusive = true }
+                        navController.navigate("MainScreen/$username") {
+                            popUpTo("MainScreen/$username") { inclusive = true }
                         }
                     }) {
                         Icon(
