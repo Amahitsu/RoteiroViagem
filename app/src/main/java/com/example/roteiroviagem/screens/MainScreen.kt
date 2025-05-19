@@ -17,9 +17,14 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
@@ -36,10 +41,18 @@ import com.example.roteiroviagem.entity.Trip
 import com.example.roteiroviagem.ui.theme.RoteiroViagemTheme
 import com.example.roteiroviagem.viewmodels.TripViewModel
 import com.example.roteiroviagem.viewmodels.TripViewModelFactory
+import com.example.roteiroviagem.api.GeminiService
+import com.example.roteiroviagem.components.RoadMapSugestionButton
 
 // Util
 import java.text.SimpleDateFormat
 import java.util.*
+
+fun calcularDiasViagem(startDate: Long, endDate: Long): Int {
+    val diffMillis = endDate - startDate
+    val dias = (diffMillis / (1000 * 60 * 60 * 24)).toInt()
+    return dias.coerceAtLeast(1)
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -148,42 +161,52 @@ fun TripItem(
                 ),
                 elevation = CardDefaults.cardElevation(4.dp)
             ) {
-                Row(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                        .padding(12.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.weight(1f)
+                    // Informações de viagem
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(
-                            "Destino: ${trip.destination}",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text("Ida: ${sdf.format(Date(trip.startDate))}")
-                        Text("Volta: ${sdf.format(Date(trip.endDate))}")
-                        Text("Orçamento: R$ %.2f".format(trip.budget))
+                        Column(
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                "Destino: ${trip.destination}",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text("Ida: ${sdf.format(Date(trip.startDate))}")
+                            Text("Volta: ${sdf.format(Date(trip.endDate))}")
+                            Text("Orçamento: R$ %.2f".format(trip.budget))
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .size(64.dp)
+                                .background(
+                                    color = MaterialTheme.colorScheme.primary,
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                                .padding(8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Image(
+                                painter = painterResource(id = iconRes),
+                                contentDescription = null,
+                                modifier = Modifier.size(40.dp)
+                            )
+                        }
                     }
 
-                    Box(
-                        modifier = Modifier
-                            .size(64.dp)
-                            .background(
-                                color = MaterialTheme.colorScheme.primary,
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                            .padding(8.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Image(
-                            painter = painterResource(id = iconRes),
-                            contentDescription = null,
-                            modifier = Modifier.size(40.dp)
-                        )
-                    }
+                    Spacer(modifier = Modifier.height(8.dp))  // Espaço entre as informações da viagem e o botão
+
+                    // Colocando o botão de sugestão abaixo dos dados
+                    RoadMapSugestionButton(trip)
                 }
             }
         }

@@ -58,14 +58,23 @@ android {
 
 dependencies {
 
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
+    // Necessário para toMediaType() e toRequestBody()
+    implementation("com.squareup.okhttp3:okhttp-urlconnection:4.12.0")
+
+    // Biblioteca JSON
+    implementation ("org.json:json:20231013")
+
     //para o banco de dados.
     val room_version = "2.6.1"
     implementation("androidx.room:room-runtime:$room_version")
     ksp("androidx.room:room-compiler:$room_version")
 
-
     val lifecycle_version = "2.8.7"
-
+    // ViewModel utilities for Compose
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycle_version")
     val nav_version = "2.8.9"
     implementation("androidx.navigation:navigation-compose:$nav_version")
     //botton navigation
@@ -90,7 +99,6 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.5.4") // ou a versão mais recente
     debugImplementation("androidx.compose.ui:ui-tooling:1.5.4") // ou a versão mais recente
     debugImplementation("androidx.compose.ui:ui-test-manifest:1.5.4") // ou a versão mais recente
-
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.room:room-ktx:$room_version")
 // ViewModel utilities for Compose

@@ -142,7 +142,7 @@ fun MyApp() {
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(bottom = 10.dp), // Ajusta a altura para alinhar com a BottomBar
-                    contentAlignment = Alignment.BottomCenter
+                    contentAlignment = Alignment.BottomEnd
                 ) {
                     FloatingActionButton(
                         onClick = { navController.navigate("add_trip/$username") },
