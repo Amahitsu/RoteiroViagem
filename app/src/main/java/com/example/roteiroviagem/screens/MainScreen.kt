@@ -13,18 +13,12 @@ import androidx.compose.material.DismissValue
 import androidx.compose.material.rememberDismissState
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
@@ -41,7 +35,6 @@ import com.example.roteiroviagem.entity.Trip
 import com.example.roteiroviagem.ui.theme.RoteiroViagemTheme
 import com.example.roteiroviagem.viewmodels.TripViewModel
 import com.example.roteiroviagem.viewmodels.TripViewModelFactory
-import com.example.roteiroviagem.api.GeminiService
 import com.example.roteiroviagem.components.RoadMapSugestionButton
 
 // Util
@@ -212,28 +205,6 @@ fun TripItem(
         }
     )
 }
-
-@Composable
-fun BottomNavBar(navController: NavController, username: String) {
-    BottomAppBar(
-        containerColor = MaterialTheme.colorScheme.primary
-    ) {
-        Spacer(Modifier.weight(1f))
-
-        FloatingActionButton(
-            onClick = {
-                navController.navigate("add_trip/$username")
-            },
-
-            containerColor = MaterialTheme.colorScheme.secondary
-        ) {
-            Icon(Icons.Filled.Add, contentDescription = "Adicionar viagem")
-        }
-
-        Spacer(Modifier.weight(1f))
-    }
-}
-
 
 @Composable
 @Preview(showSystemUi = true, showBackground = true)

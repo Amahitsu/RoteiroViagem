@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
-import androidx.compose.material.FabPosition
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
@@ -41,6 +40,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.roteiroviagem.database.AppDatabase
 import com.example.roteiroviagem.entity.Trip
+import com.example.roteiroviagem.screens.AboutScreen
 import com.example.roteiroviagem.screens.AddTripScreen
 import com.example.roteiroviagem.screens.LoginScreen
 import com.example.roteiroviagem.screens.MainScreen
@@ -73,39 +73,43 @@ fun MyApp() {
     val currentDestination = backStack.value?.destination?.route
 
     val showBottomBar = currentDestination?.startsWith("MainScreen") == true ||
-            currentDestination == "Profile" ||
-            currentDestination == "About"
+            currentDestination?.startsWith("Profile") == true ||
+            currentDestination?.startsWith("About") == true
 
     Scaffold(
         topBar = {
-                TopAppBar(
-                    title = { Text("Minhas Viagens", color = MaterialTheme.colorScheme.onPrimary) },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    ),
-                    actions = {
-                        if (currentDestination != "Login" && currentDestination != "RegisterUser") {
-                            TextButton(onClick = {
-                                navController.navigate("Login") {
-                                    popUpTo("MainScreen/{$username}") { inclusive = true }
-                                }
-                            }) {
-                                Text("Sair", color = MaterialTheme.colorScheme.onPrimary)
+            TopAppBar(
+                title = { Text("Minhas Viagens", color = MaterialTheme.colorScheme.onPrimary) },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                ),
+                actions = {
+                    if (currentDestination != "Login" && currentDestination != "RegisterUser") {
+                        TextButton(onClick = {
+                            navController.navigate("Login") {
+                                popUpTo("MainScreen/{$username}") { inclusive = true }
                             }
+                        }) {
+                            Text("Sair", color = MaterialTheme.colorScheme.onPrimary)
                         }
                     }
-                )
+                }
+            )
         },
         bottomBar = {
             if (showBottomBar) {
-                BottomNavigation {
+                BottomNavigation(
+                    backgroundColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ) {
                     BottomNavigationItem(
                         selected = currentDestination?.startsWith("Profile") == true,
                         onClick = { navController.navigate("Profile") },
                         icon = {
                             Icon(
                                 imageVector = Icons.Default.Person,
-                                contentDescription = "Profile"
+                                contentDescription = "Profile",
+                                tint = MaterialTheme.colorScheme.onPrimary
                             )
                         }
                     )
@@ -119,17 +123,19 @@ fun MyApp() {
                         icon = {
                             Icon(
                                 imageVector = Icons.Default.Home,
-                                contentDescription = "Main Screen"
+                                contentDescription = "Main Screen",
+                                tint = MaterialTheme.colorScheme.onPrimary
                             )
                         }
                     )
                     BottomNavigationItem(
                         selected = currentDestination == "About",
-                        onClick = { navController.navigate("About") },
+                        onClick = { navController.navigate("About/$username") },
                         icon = {
                             Icon(
                                 imageVector = Icons.Default.Info,
-                                contentDescription = "About"
+                                contentDescription = "About",
+                                tint = MaterialTheme.colorScheme.onPrimary
                             )
                         }
                     )
@@ -141,7 +147,7 @@ fun MyApp() {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(bottom = 10.dp), // Ajusta a altura para alinhar com a BottomBar
+                        .padding(bottom = 10.dp),
                     contentAlignment = Alignment.BottomEnd
                 ) {
                     FloatingActionButton(
@@ -169,12 +175,16 @@ fun MyApp() {
                     MainScreen(navController = navController, username = username)
                 }
             }
+            composable("About/{username}") { backStackEntry ->
+                val usernameArg = backStackEntry.arguments?.getString("username") ?: ""
+                username = usernameArg // <- Aqui é onde corrigimos
+                AboutScreen(navController = navController, username = usernameArg)
+            }
             composable("RegisterUser") {
                 RegisterUser(onNavigateTo = { route ->
                     navController.navigate(route)
                 })
             }
-
             composable("add_trip/{username}") { backStackEntry ->
                 val username = backStackEntry.arguments?.getString("username") ?: ""
                 AddTripScreen(navController = navController, username = username)
