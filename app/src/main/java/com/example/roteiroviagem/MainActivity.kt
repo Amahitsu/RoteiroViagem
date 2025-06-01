@@ -3,49 +3,35 @@ package com.example.roteiroviagem
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
+import androidx.compose.material.Icon
+import androidx.compose.material.Text
+import androidx.compose.material.TextButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Backpack
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.*
+import com.example.roteiroviagem.api.GeminiService
 import com.example.roteiroviagem.database.AppDatabase
 import com.example.roteiroviagem.entity.Trip
-import com.example.roteiroviagem.screens.AboutScreen
-import com.example.roteiroviagem.screens.AddTripScreen
-import com.example.roteiroviagem.screens.LoginScreen
-import com.example.roteiroviagem.screens.MainScreen
-import com.example.roteiroviagem.screens.RegisterUser
+import com.example.roteiroviagem.screens.*
 import com.example.roteiroviagem.ui.theme.RoteiroViagemTheme
+import com.example.roteiroviagem.viewmodel.RoteiroViewModel
+import com.example.roteiroviagem.data.repository.RoteiroRepository
+import com.example.roteiroviagem.viewmodels.RoteiroViewModelFactory
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,12 +54,26 @@ class MainActivity : ComponentActivity() {
 fun MyApp() {
     val navController = rememberNavController()
     var username by rememberSaveable { mutableStateOf("") }
+    val context = LocalContext.current
 
-    val backStack = navController.currentBackStackEntryAsState()
-    val currentDestination = backStack.value?.destination?.route
+    // Banco e DAO
+    val database = remember { AppDatabase.getDatabase(context) }
+    val tripDao = remember { database.tripDao() }
+    val roteiroDao = remember { database.roteiroDao() }
+
+    // Repositório e GeminiService
+    val roteiroRepository = remember { RoteiroRepository(roteiroDao, GeminiService) }
+
+    // ViewModel com factory completo
+    val roteiroViewModel: RoteiroViewModel = viewModel(
+        factory = RoteiroViewModelFactory(roteiroRepository)
+    )
+
+    val backStack by navController.currentBackStackEntryAsState()
+    val currentDestination = backStack?.destination?.route
 
     val showBottomBar = currentDestination?.startsWith("MainScreen") == true ||
-            currentDestination?.startsWith("Profile") == true ||
+            currentDestination?.startsWith("ListaRoteirosScreen") == true ||
             currentDestination?.startsWith("About") == true
 
     Scaffold(
@@ -87,7 +87,8 @@ fun MyApp() {
                     if (currentDestination != "Login" && currentDestination != "RegisterUser") {
                         TextButton(onClick = {
                             navController.navigate("Login") {
-                                popUpTo("MainScreen/{$username}") { inclusive = true }
+                                popUpTo("MainScreen/$username") { inclusive = true }
+                                launchSingleTop = true
                             }
                         }) {
                             Text("Sair", color = MaterialTheme.colorScheme.onPrimary)
@@ -103,38 +104,56 @@ fun MyApp() {
                     contentColor = MaterialTheme.colorScheme.onPrimary
                 ) {
                     BottomNavigationItem(
-                        selected = currentDestination?.startsWith("Profile") == true,
-                        onClick = { navController.navigate("Profile") },
+                        selected = currentDestination?.startsWith("ListaRoteirosScreen") == true,
+                        onClick = {
+                            if (username.isNotBlank()) {
+                                navController.navigate("ListaRoteirosScreen/$username") {
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
+                        },
                         icon = {
                             Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = "Profile",
+                                imageVector = Icons.Default.Backpack,
+                                contentDescription = "Roteiros",
                                 tint = MaterialTheme.colorScheme.onPrimary
                             )
                         }
                     )
+
                     BottomNavigationItem(
                         selected = currentDestination?.startsWith("MainScreen") == true,
                         onClick = {
                             if (username.isNotBlank()) {
-                                navController.navigate("MainScreen/$username")
+                                navController.navigate("MainScreen/$username") {
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
                             }
                         },
                         icon = {
                             Icon(
                                 imageVector = Icons.Default.Home,
-                                contentDescription = "Main Screen",
+                                contentDescription = "Tela Principal",
                                 tint = MaterialTheme.colorScheme.onPrimary
                             )
                         }
                     )
                     BottomNavigationItem(
-                        selected = currentDestination == "About",
-                        onClick = { navController.navigate("About/$username") },
+                        selected = currentDestination?.startsWith("About") == true,
+                        onClick = {
+                            if (username.isNotBlank()) {
+                                navController.navigate("About/$username") {
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
+                        },
                         icon = {
                             Icon(
                                 imageVector = Icons.Default.Info,
-                                contentDescription = "About",
+                                contentDescription = "Sobre",
                                 tint = MaterialTheme.colorScheme.onPrimary
                             )
                         }
@@ -144,18 +163,11 @@ fun MyApp() {
         },
         floatingActionButton = {
             if (showBottomBar && username.isNotBlank()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(bottom = 10.dp),
-                    contentAlignment = Alignment.BottomEnd
+                FloatingActionButton(
+                    onClick = { navController.navigate("add_trip/$username") },
+                    containerColor = MaterialTheme.colorScheme.primary
                 ) {
-                    FloatingActionButton(
-                        onClick = { navController.navigate("add_trip/$username") },
-                        containerColor = MaterialTheme.colorScheme.secondary
-                    ) {
-                        Icon(Icons.Filled.Add, contentDescription = "Adicionar Viagem")
-                    }
+                    Icon(Icons.Filled.Add, contentDescription = "Adicionar Viagem")
                 }
             }
         }
@@ -169,16 +181,14 @@ fun MyApp() {
                 LoginScreen(navController = navController)
             }
             composable("MainScreen/{username}") { backStackEntry ->
-                val argUsername = backStackEntry.arguments?.getString("username")
-                if (argUsername != null) {
-                    username = argUsername
-                    MainScreen(navController = navController, username = username)
-                }
+                val userArg = backStackEntry.arguments?.getString("username") ?: ""
+                if (username != userArg) username = userArg
+                MainScreen(navController = navController, username = userArg)
             }
             composable("About/{username}") { backStackEntry ->
-                val usernameArg = backStackEntry.arguments?.getString("username") ?: ""
-                username = usernameArg // <- Aqui é onde corrigimos
-                AboutScreen(navController = navController, username = usernameArg)
+                val userArg = backStackEntry.arguments?.getString("username") ?: ""
+                if (username != userArg) username = userArg
+                AboutScreen(navController = navController, username = userArg)
             }
             composable("RegisterUser") {
                 RegisterUser(onNavigateTo = { route ->
@@ -186,27 +196,33 @@ fun MyApp() {
                 })
             }
             composable("add_trip/{username}") { backStackEntry ->
-                val username = backStackEntry.arguments?.getString("username") ?: ""
-                AddTripScreen(navController = navController, username = username)
+                val userArg = backStackEntry.arguments?.getString("username") ?: ""
+                AddTripScreen(navController = navController, username = userArg)
             }
             composable("edit_trip/{tripId}/{username}") { backStackEntry ->
                 val tripId = backStackEntry.arguments?.getString("tripId")?.toIntOrNull()
-                val username = backStackEntry.arguments?.getString("username") ?: ""
-                val context = LocalContext.current
-                val tripDao = AppDatabase.getDatabase(context).tripDao()
-                var trip by remember { mutableStateOf<Trip?>(null) }
+                val userArg = backStackEntry.arguments?.getString("username") ?: ""
 
-                LaunchedEffect(tripId) {
-                    trip = tripId?.let { tripDao.getById(it) }
+                // Use produceState para carregar trip de forma assíncrona
+                val tripState = produceState<Trip?>(initialValue = null, tripId) {
+                    value = tripId?.let { tripDao.getById(it) }
                 }
 
-                trip?.let {
+                tripState.value?.let { trip ->
                     AddTripScreen(
                         navController = navController,
-                        username = username,
-                        existingTrip = it
+                        username = userArg,
+                        existingTrip = trip
                     )
                 }
+            }
+            composable("ListaRoteirosScreen/{username}") { backStackEntry ->
+                val userArg = backStackEntry.arguments?.getString("username") ?: ""
+                ListaRoteirosScreen(
+                    roteiroViewModel = roteiroViewModel,
+                    navController = navController,
+                    username = userArg
+                )
             }
         }
     }

@@ -1,5 +1,6 @@
 package com.example.roteiroviagem.screens
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -7,57 +8,55 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.SwipeToDismiss
 import androidx.compose.material.DismissDirection
 import androidx.compose.material.DismissValue
-import androidx.compose.material.rememberDismissState
 import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.SwipeToDismiss
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.rememberDismissState
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.example.roteiroviagem.R
+import com.example.roteiroviagem.api.GeminiService
+import com.example.roteiroviagem.components.RoadMapSugestionButton
+import com.example.roteiroviagem.data.repository.RoteiroRepository
 import com.example.roteiroviagem.database.AppDatabase
 import com.example.roteiroviagem.entity.Trip
-import com.example.roteiroviagem.ui.theme.RoteiroViagemTheme
+import com.example.roteiroviagem.viewmodels.RoteiroViewModelFactory
+import com.example.roteiroviagem.viewmodel.RoteiroViewModel
 import com.example.roteiroviagem.viewmodels.TripViewModel
 import com.example.roteiroviagem.viewmodels.TripViewModelFactory
-import com.example.roteiroviagem.components.RoadMapSugestionButton
-
-// Util
 import java.text.SimpleDateFormat
 import java.util.*
-
-fun calcularDiasViagem(startDate: Long, endDate: Long): Int {
-    val diffMillis = endDate - startDate
-    val dias = (diffMillis / (1000 * 60 * 60 * 24)).toInt()
-    return dias.coerceAtLeast(1)
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(navController: NavController, username: String) {
     val context = LocalContext.current
-    val tripDao = AppDatabase.getDatabase(context).tripDao()
+    val database = AppDatabase.getDatabase(context)
+    val tripDao = database.tripDao()
+    val roteiroDao = database.roteiroDao()
+
     val tripViewModel: TripViewModel = viewModel(factory = TripViewModelFactory(tripDao, username))
     val tripList by tripViewModel.trips.collectAsState()
 
-    Scaffold(
+    val roteiroRepository = remember { RoteiroRepository(roteiroDao, GeminiService) }
+    val roteiroViewModel: RoteiroViewModel = viewModel(factory = RoteiroViewModelFactory(roteiroRepository))
 
-    ) { innerPadding ->
+    Scaffold { innerPadding ->
         Column(
             modifier = Modifier
                 .padding(innerPadding)
@@ -76,8 +75,11 @@ fun MainScreen(navController: NavController, username: String) {
                     items(tripList) { trip ->
                         TripItem(
                             trip = trip,
+                            roteiroViewModel = roteiroViewModel,
+                            roteiroRepository = roteiroRepository,
                             onDelete = { tripViewModel.deleteTrip(trip) },
-                            onEdit = { navController.navigate("edit_trip/${trip.id}/$username") }
+                            onEdit = { navController.navigate("edit_trip/${trip.id}/$username") },
+                            navController = navController // ✅ Corrigido
                         )
                     }
                 }
@@ -86,12 +88,16 @@ fun MainScreen(navController: NavController, username: String) {
     }
 }
 
+@SuppressLint("StateFlowValueCalledInComposition")
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun TripItem(
     trip: Trip,
+    roteiroViewModel: RoteiroViewModel,
+    roteiroRepository: RoteiroRepository,
     onDelete: () -> Unit,
-    onEdit: () -> Unit
+    onEdit: () -> Unit,
+    navController: NavController
 ) {
     val dismissState = rememberDismissState(
         confirmStateChange = {
@@ -108,6 +114,9 @@ fun TripItem(
             }
         }
     )
+
+    // Remover o LaunchedEffect que carregava o roteiro
+    val roteiro = roteiroViewModel.roteiro.value
 
     SwipeToDismiss(
         state = dismissState,
@@ -145,9 +154,7 @@ fun TripItem(
                     .fillMaxWidth()
                     .padding(vertical = 4.dp)
                     .pointerInput(Unit) {
-                        detectTapGestures(
-                            onLongPress = { onEdit() } // Detecção de clique longo
-                        )
+                        detectTapGestures(onLongPress = { onEdit() })
                     },
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -159,15 +166,12 @@ fun TripItem(
                         .fillMaxWidth()
                         .padding(12.dp)
                 ) {
-                    // Informações de viagem
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Column(
-                            modifier = Modifier.weight(1f)
-                        ) {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 "Destino: ${trip.destination}",
                                 style = MaterialTheme.typography.titleMedium,
@@ -196,21 +200,29 @@ fun TripItem(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))  // Espaço entre as informações da viagem e o botão
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                    // Colocando o botão de sugestão abaixo dos dados
-                    RoadMapSugestionButton(trip)
+                    roteiro?.let {
+                        Text("Roteiro salvo:")
+                        Text(it.sugestao)
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    if (roteiro == null || roteiro.aceito.not()) {
+                        RoadMapSugestionButton(
+                            trip = trip,
+                            roteiroRepository = roteiroRepository,
+                            navController = navController
+                        )
+                    } else {
+                        Text(
+                            "Roteiro aceito",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
         }
     )
-}
-
-@Composable
-@Preview(showSystemUi = true, showBackground = true)
-fun PreviewMainScreen() {
-    RoteiroViagemTheme {
-        // Chamando a tela principal diretamente no Preview com um username fixo
-        MainScreen(navController = rememberNavController(), username = "testeUsuario")
-    }
 }

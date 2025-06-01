@@ -34,7 +34,6 @@ fun AboutScreen(navController: NavController, username: String) {
                 Nosso objetivo é tornar suas viagens mais organizadas e inesquecíveis.
 
                 Versão: 1.0.0
-                Usuário logado: $username
             """.trimIndent(),
             style = MaterialTheme.typography.bodyLarge
         )
