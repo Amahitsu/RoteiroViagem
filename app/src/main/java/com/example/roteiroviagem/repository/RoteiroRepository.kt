@@ -9,25 +9,37 @@ class RoteiroRepository(
     private val geminiService: GeminiService
 ) {
 
-    suspend fun obterRoteiro(destino: String): Roteiro {
-        val roteiroSalvo = roteiroDao.buscarUltimoNaoAceito(destino)
+    suspend fun obterRoteiro(destino: String, userId: String, dias: Long, orcamento: Double): Roteiro {
+        val roteiroSalvo = roteiroDao.buscarUltimoNaoAceito(destino, userId)
         return roteiroSalvo ?: run {
-            val sugestao = geminiService.sugerirRoteiroComSalvamento(destino, this)
-            val novo = Roteiro(destino = destino, sugestao = sugestao, aceito = false)
-            roteiroDao.inserir(novo)
-            novo
+            val sugestao = geminiService.sugerirRoteiroComSalvamento(destino, userId, dias, orcamento, this)
+            return Roteiro(destino = destino, sugestao = sugestao, aceito = false, userId = userId)
         }
     }
 
-    suspend fun recusarERetornarOutro(destino: String): Roteiro {
-        val novaSugestao = geminiService.sugerirRoteiroComSalvamento(destino, this)
-        val novo = Roteiro(destino = destino, sugestao = novaSugestao, aceito = false)
+    suspend fun recusarERetornarOutro(
+        destino: String,
+        userId: String,
+        dias: Long,
+        orcamento: Double,
+        motivoRecusa: String?
+    ): Roteiro {
+        // gera uma nova sugestão via Gemini
+        val novaSugestao = GeminiService.sugerirRoteiroComSalvamento(destino, userId, dias, orcamento, this)
+
+        val novo = Roteiro(
+            destino = destino,
+            sugestao = novaSugestao,
+            aceito = false,
+            userId = userId,
+            motivoRecusa = motivoRecusa
+        )
+
         roteiroDao.inserir(novo)
         return novo
     }
 
-    suspend fun salvar(destino: String, resultado: String) {
-        val roteiro = Roteiro(destino = destino, sugestao = resultado, aceito = false)
+    suspend fun salvar(roteiro: Roteiro) {
         roteiroDao.inserir(roteiro)
     }
 
@@ -36,7 +48,7 @@ class RoteiroRepository(
         roteiroDao.atualizar(roteiroAceito)
     }
 
-    suspend fun listarTodos(): List<Roteiro> {
-        return roteiroDao.buscarTodos()
+    suspend fun listarTodosPorUsuario(userId: String): List<Roteiro> {
+        return roteiroDao.buscarTodosPorUsuario(userId)
     }
 }

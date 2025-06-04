@@ -24,13 +24,13 @@ fun ListaRoteirosScreen(
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {
-        roteiroViewModel.carregarTodosRoteiros()
+        roteiroViewModel.carregarTodosRoteirosAceitos()
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Sugestões Armazenadas") }
+                title = { Text("Sugestões Aceitas") }
             )
         }
     ) { padding ->
@@ -51,7 +51,7 @@ fun ListaRoteirosScreen(
                         Spacer(modifier = Modifier.height(4.dp))
                         Text("Sugestão: ${roteiro.sugestao}", style = MaterialTheme.typography.bodyMedium)
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text("Aceito: ${if (roteiro.aceito) "Sim" else "Não"}")
+
                     }
                 }
             }

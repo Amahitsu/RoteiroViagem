@@ -8,13 +8,15 @@ import com.example.roteiroviagem.viewmodel.RoteiroViewModel
 
 
 class RoteiroViewModelFactory(
-    private val repository: RoteiroRepository
+    private val repository: RoteiroRepository,
+    private val geminiService: GeminiService,
+    private val userId: String
 ) : ViewModelProvider.Factory {
 
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(RoteiroViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return RoteiroViewModel(repository, GeminiService) as T
+            return RoteiroViewModel(repository, geminiService, userId) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

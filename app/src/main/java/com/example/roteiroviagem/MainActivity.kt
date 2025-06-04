@@ -61,14 +61,6 @@ fun MyApp() {
     val tripDao = remember { database.tripDao() }
     val roteiroDao = remember { database.roteiroDao() }
 
-    // Repositório e GeminiService
-    val roteiroRepository = remember { RoteiroRepository(roteiroDao, GeminiService) }
-
-    // ViewModel com factory completo
-    val roteiroViewModel: RoteiroViewModel = viewModel(
-        factory = RoteiroViewModelFactory(roteiroRepository)
-    )
-
     val backStack by navController.currentBackStackEntryAsState()
     val currentDestination = backStack?.destination?.route
 
@@ -140,6 +132,7 @@ fun MyApp() {
                             )
                         }
                     )
+
                     BottomNavigationItem(
                         selected = currentDestination?.startsWith("About") == true,
                         onClick = {
@@ -203,7 +196,6 @@ fun MyApp() {
                 val tripId = backStackEntry.arguments?.getString("tripId")?.toIntOrNull()
                 val userArg = backStackEntry.arguments?.getString("username") ?: ""
 
-                // Use produceState para carregar trip de forma assíncrona
                 val tripState = produceState<Trip?>(initialValue = null, tripId) {
                     value = tripId?.let { tripDao.getById(it) }
                 }
@@ -218,6 +210,17 @@ fun MyApp() {
             }
             composable("ListaRoteirosScreen/{username}") { backStackEntry ->
                 val userArg = backStackEntry.arguments?.getString("username") ?: ""
+                if (username != userArg) username = userArg
+
+                val roteiroRepository = remember { RoteiroRepository(roteiroDao, GeminiService) }
+                val roteiroViewModel: RoteiroViewModel = viewModel(
+                    factory = RoteiroViewModelFactory(
+                        repository = roteiroRepository,
+                        geminiService = GeminiService,
+                        userId = userArg
+                    )
+                )
+
                 ListaRoteirosScreen(
                     roteiroViewModel = roteiroViewModel,
                     navController = navController,

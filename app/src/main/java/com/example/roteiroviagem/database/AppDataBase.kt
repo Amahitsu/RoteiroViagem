@@ -13,7 +13,7 @@ import com.example.roteiroviagem.entity.User
 
 @Database(
     entities = [User::class, Trip::class, Roteiro::class],
-    version = 5, // Aumente sempre que mudar o schema!
+    version = 9, // Aumente sempre que mudar o schema!
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

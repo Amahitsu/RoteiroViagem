@@ -8,5 +8,7 @@ data class Roteiro(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val destino: String,
     val sugestao: String,
-    val aceito: Boolean = false
+    val aceito: Boolean = false,
+    val userId: String,
+    val motivoRecusa: String? = null
 )

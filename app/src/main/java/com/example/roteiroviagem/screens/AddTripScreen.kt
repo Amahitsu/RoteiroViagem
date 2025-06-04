@@ -62,7 +62,7 @@ fun AddTripScreen(navController: NavController, username: String, existingTrip: 
     var destination by remember { mutableStateOf(TextFieldValue(existingTrip?.destination ?: "")) }
     var startDate by remember { mutableStateOf(existingTrip?.startDate?.let { Date(it) }) }
     var endDate by remember { mutableStateOf(existingTrip?.endDate?.let { Date(it) }) }
-    var budget by remember { mutableStateOf(existingTrip?.budget?.toString() ?: "") }
+    var budget by remember { mutableStateOf(existingTrip?.orcamento?.toString() ?: "") }
     var selectedType by remember { mutableStateOf(existingTrip?.type ?: "Business") }
 
     fun formatDate(date: Date?, defaultText: String): String {
@@ -138,7 +138,7 @@ fun AddTripScreen(navController: NavController, username: String, existingTrip: 
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                val iconBgColor = MaterialTheme.colorScheme.surface
+                val iconBgColor = MaterialTheme.colorScheme.primary
 
                 IconButton(
                     onClick = { selectedType = "Business" },
@@ -147,7 +147,7 @@ fun AddTripScreen(navController: NavController, username: String, existingTrip: 
                         .background(iconBgColor, RoundedCornerShape(12.dp))
                         .border(
                             width = if (selectedType == "Business") 2.dp else 0.dp,
-                            color = if (selectedType == "Business") MaterialTheme.colorScheme.primary else Color.Transparent,
+                            color = if (selectedType == "Business") Color.Black else Color.Transparent,
                             shape = RoundedCornerShape(12.dp)
                         )
                 ) {
@@ -165,7 +165,7 @@ fun AddTripScreen(navController: NavController, username: String, existingTrip: 
                         .background(iconBgColor, RoundedCornerShape(12.dp))
                         .border(
                             width = if (selectedType == "Leisure") 2.dp else 0.dp,
-                            color = if (selectedType == "Leisure") MaterialTheme.colorScheme.primary else Color.Transparent,
+                            color = if (selectedType == "Leisure") Color.Black else Color.Transparent,
                             shape = RoundedCornerShape(12.dp)
                         )
                 ) {
@@ -235,7 +235,7 @@ fun AddTripScreen(navController: NavController, username: String, existingTrip: 
 
             Button(
                 onClick = {
-                    val budgetValue = budget.toDoubleOrNull()
+                    val orcamentoValue = budget.toDoubleOrNull()
                     val validDates = startDate != null && endDate != null && !startDate!!.after(endDate!!)
 
                     when {
@@ -243,14 +243,14 @@ fun AddTripScreen(navController: NavController, username: String, existingTrip: 
                         startDate == null -> Toast.makeText(ctx, "Selecione a data de ida.", Toast.LENGTH_SHORT).show()
                         endDate == null -> Toast.makeText(ctx, "Selecione a data de volta.", Toast.LENGTH_SHORT).show()
                         !validDates -> Toast.makeText(ctx, "Datas inválidas.", Toast.LENGTH_SHORT).show()
-                        budgetValue == null || budgetValue <= 0 -> Toast.makeText(ctx, "Informe um orçamento válido.", Toast.LENGTH_SHORT).show()
+                        orcamentoValue == null || orcamentoValue <= 0 -> Toast.makeText(ctx, "Informe um orçamento válido.", Toast.LENGTH_SHORT).show()
                         else -> {
                             val trip = Trip(
                                 id = existingTrip?.id ?: 0,
                                 destination = destination.text,
                                 startDate = startDate!!.time,
                                 endDate = endDate!!.time,
-                                budget = budgetValue,
+                                orcamento = orcamentoValue,
                                 type = selectedType,
                                 username = username
                             )

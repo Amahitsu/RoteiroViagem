@@ -11,54 +11,77 @@ import kotlinx.coroutines.launch
 
 class RoteiroViewModel(
     private val repository: RoteiroRepository,
-    private val geminiService: GeminiService) : ViewModel() {
+    private val geminiService: GeminiService,
+    private val userId: String
+) : ViewModel() {
 
     private val _roteiro = MutableStateFlow<Roteiro?>(null)
     val roteiro: StateFlow<Roteiro?> get() = _roteiro
 
     private val _roteiros = MutableStateFlow<List<Roteiro>>(emptyList())
     val roteiros: StateFlow<List<Roteiro>> get() = _roteiros
+//
+//    fun carregarRoteiro(destino: String, dias: Long, orcamento: Double) {
+//        viewModelScope.launch {
+//            val roteiroCarregado = repository.obterRoteiro(destino, userId, dias, orcamento)
+//            _roteiro.value = roteiroCarregado
+//        }
+//    }
+//    fun gerarNovoRoteiro(destino: String, dias: Long) {
+//        viewModelScope.launch {
+//            try {
+//                val textoRoteiro = geminiService.sugerirRoteiro(
+//                    destino = destino,
+//                    userId = userId,
+//                    repository = repository,
+//                    dias = dias
+//                )
+//                val novoRoteiro = Roteiro(
+//                    id = 0,
+//                    destino = destino,
+//                    sugestao = textoRoteiro,
+//                    aceito = false,
+//                    userId = userId
+//                )
+//                _roteiro.value = novoRoteiro
+//            } catch (e: Exception) {
+//                // TODO: tratar erro de forma apropriada (exibir toast/snackbar/log)
+//            }
+//        }
+//    }
 
-    // Carrega roteiro salvo ou gera um novo
-    fun carregarRoteiro(destino: String) {
+    fun inserirRoteiro(roteiro: Roteiro) {
         viewModelScope.launch {
-            val roteiroCarregado = repository.obterRoteiro(destino)
-            _roteiro.value = roteiroCarregado
+            repository.salvar(roteiro)
+            carregarTodosRoteirosAceitos()
         }
     }
 
-    // Salva um novo roteiro baseado no destino (usa lógica interna do repository)
-    fun salvarRoteiro(destino: String) {
-        viewModelScope.launch {
-            val roteiroSalvo = repository.obterRoteiro(destino)
-            _roteiro.value = roteiroSalvo
-        }
-    }
 
-    // Recusa roteiro e busca outro
-    fun recusarERetornarOutro(destino: String) {
-        viewModelScope.launch {
-            val novoRoteiro = repository.recusarERetornarOutro(destino)
-            _roteiro.value = novoRoteiro
-        }
-    }
-
-    // Aceita o roteiro e atualiza no banco
     fun aceitarRoteiro(roteiro: Roteiro) {
         viewModelScope.launch {
-            repository.aceitarRoteiro(roteiro)
-            _roteiro.value = roteiro.copy(aceito = true)
+            val roteiroParaSalvar = roteiro.copy(aceito = true)
+            repository.salvar(roteiroParaSalvar)
+            _roteiro.value = roteiroParaSalvar
+            carregarTodosRoteirosAceitos()
         }
     }
 
-    // Carrega todos os roteiros salvos no banco
-    fun carregarTodosRoteiros() {
+    // Ajuste aqui: agora recebe 'dias' e passa ao repository
+    fun recusarERetornarOutro(destino: String,  dias: Long, orcamento: Double, motivoRecusa: String?) {
+        viewModelScope.launch {
+            val roteiroRecusado = repository.recusarERetornarOutro(destino, userId,dias, orcamento, motivoRecusa)
+            _roteiro.value = roteiroRecusado
+        }
+    }
+
+    fun carregarTodosRoteirosAceitos() {
         viewModelScope.launch {
             try {
-                val lista = repository.listarTodos()
-                _roteiros.value = lista
+                val lista = repository.listarTodosPorUsuario(userId)
+                _roteiros.value = lista.filter { it.aceito }
             } catch (e: Exception) {
-                _roteiros.value = emptyList() // Em caso de erro, retornar lista vazia
+                _roteiros.value = emptyList()
             }
         }
     }

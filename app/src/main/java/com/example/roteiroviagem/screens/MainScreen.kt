@@ -54,8 +54,13 @@ fun MainScreen(navController: NavController, username: String) {
     val tripList by tripViewModel.trips.collectAsState()
 
     val roteiroRepository = remember { RoteiroRepository(roteiroDao, GeminiService) }
-    val roteiroViewModel: RoteiroViewModel = viewModel(factory = RoteiroViewModelFactory(roteiroRepository))
-
+    val roteiroViewModel: RoteiroViewModel = viewModel(
+        factory = RoteiroViewModelFactory(
+            repository = roteiroRepository,
+            geminiService = GeminiService,
+            userId = username
+        )
+    )
     Scaffold { innerPadding ->
         Column(
             modifier = Modifier
@@ -179,7 +184,7 @@ fun TripItem(
                             )
                             Text("Ida: ${sdf.format(Date(trip.startDate))}")
                             Text("Volta: ${sdf.format(Date(trip.endDate))}")
-                            Text("Orçamento: R$ %.2f".format(trip.budget))
+                            Text("Orçamento: R$ %.2f".format(trip.orcamento))
                         }
 
                         Box(
@@ -212,7 +217,8 @@ fun TripItem(
                         RoadMapSugestionButton(
                             trip = trip,
                             roteiroRepository = roteiroRepository,
-                            navController = navController
+                            navController = navController,
+                            roteiroViewModel = roteiroViewModel,
                         )
                     } else {
                         Text(

@@ -9,7 +9,7 @@ data class Trip(
     val destination: String,
     val startDate: Long,
     val endDate: Long,
-    val budget: Double,
+    val orcamento: Double,
     val type: String,
     val username: String
 )
