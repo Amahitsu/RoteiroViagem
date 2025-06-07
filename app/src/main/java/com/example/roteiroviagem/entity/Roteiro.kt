@@ -3,12 +3,10 @@ package com.example.roteiroviagem.entity
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "roteiros")
+@Entity
 data class Roteiro(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val username: String,
     val destino: String,
-    val sugestao: String,
-    val aceito: Boolean = false,
-    val userId: String,
-    val motivoRecusa: String? = null
+    val sugestao: String
 )

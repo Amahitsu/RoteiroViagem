@@ -13,7 +13,7 @@ import com.example.roteiroviagem.entity.User
 
 @Database(
     entities = [User::class, Trip::class, Roteiro::class],
-    version = 9, // Aumente sempre que mudar o schema!
+    version = 4, // Aumente sempre que mudar o schema!
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -32,7 +32,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "user_database"
                 )
-                    .fallbackToDestructiveMigration() // <-- Adicionado aqui
+                    .fallbackToDestructiveMigration()
                     .build()
                     .also { Instance = it }
             }

@@ -208,24 +208,12 @@ fun MyApp() {
                     )
                 }
             }
+
             composable("ListaRoteirosScreen/{username}") { backStackEntry ->
-                val userArg = backStackEntry.arguments?.getString("username") ?: ""
-                if (username != userArg) username = userArg
-
-                val roteiroRepository = remember { RoteiroRepository(roteiroDao, GeminiService) }
-                val roteiroViewModel: RoteiroViewModel = viewModel(
-                    factory = RoteiroViewModelFactory(
-                        repository = roteiroRepository,
-                        geminiService = GeminiService,
-                        userId = userArg
-                    )
-                )
-
-                ListaRoteirosScreen(
-                    roteiroViewModel = roteiroViewModel,
-                    navController = navController,
-                    username = userArg
-                )
+                val username = backStackEntry.arguments?.getString("username") ?: ""
+                ListaRoteirosScreen(username = username) {
+                    navController.popBackStack()
+                }
             }
         }
     }

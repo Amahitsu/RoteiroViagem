@@ -3,96 +3,79 @@ package com.example.roteiroviagem.components
 import android.os.Build
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.roteiroviagem.api.GeminiService
 import com.example.roteiroviagem.data.repository.RoteiroRepository
+import com.example.roteiroviagem.database.AppDatabase
 import com.example.roteiroviagem.entity.Roteiro
 import com.example.roteiroviagem.entity.Trip
 import com.example.roteiroviagem.viewmodel.RoteiroViewModel
+import com.example.roteiroviagem.viewmodels.RoteiroViewModelFactory
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 
+
+fun calcularDiasViagem(startDate: Long, endDate: Long): Int {
+    val diffMillis = endDate - startDate
+    val dias = (diffMillis / (1000 * 60 * 60 * 24)).toInt() + 1
+    return dias.coerceAtLeast(1)
+}
+
 @Composable
-fun RoadMapSugestionButton(
-    trip: Trip,
-    roteiroRepository: RoteiroRepository,
-    navController: NavController,
-    roteiroViewModel: RoteiroViewModel
-) {
+fun RoadMapSugestionButton(trip: Trip) {
+    val context = LocalContext.current
+
+    var extraRequest by remember { mutableStateOf("") }  // Novo campo para pedido extra
+    val roteiroDao = AppDatabase.getDatabase(context).roteiroDao()
+    val roteiroRepository = RoteiroRepository(roteiroDao)
+    val roteiroViewModel: RoteiroViewModel = viewModel(factory = RoteiroViewModelFactory(roteiroRepository))
+
     var showDialog by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     var suggestion by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var currentRoteiro by remember { mutableStateOf<Roteiro?>(null) }
 
-    var recusaMode by remember { mutableStateOf(false) }
-    var motivoRecusa by remember { mutableStateOf("") }
-
-    val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
-
-    fun calcularDias(startMillis: Long, endMillis: Long): Long {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val zone = ZoneId.systemDefault()
-            val startDate = Instant.ofEpochMilli(startMillis).atZone(zone).toLocalDate().atStartOfDay(zone).toInstant()
-            val endDate = Instant.ofEpochMilli(endMillis).atZone(zone).toLocalDate().atStartOfDay(zone).toInstant()
-            ChronoUnit.DAYS.between(startDate, endDate) + 1
-        } else {
-            // Para versões mais antigas, faça o cálculo arredondando para cima
-            val diffMillis = endMillis - startMillis
-            val oneDayMillis = 1000 * 60 * 60 * 24
-            (diffMillis + oneDayMillis - 1) / oneDayMillis
-        }
-    }
-
-    fun loadRoteiro(destino: String, userId: String, orcamento: Double) {
-        isLoading = true
-        errorMessage = null
-
-        val dias = calcularDias(trip.startDate, trip.endDate)
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val startDate =
-                Instant.ofEpochMilli(trip.startDate).atZone(ZoneId.systemDefault()).toLocalDate()
-            val endDate =
-                Instant.ofEpochMilli(trip.endDate).atZone(ZoneId.systemDefault()).toLocalDate()
-            Log.d("DIAS_VIAGEM", "Início: $startDate, Fim: $endDate, Dias: $dias")
-        }
-
-        coroutineScope.launch {
-            try {
-                val roteiro = roteiroRepository.obterRoteiro(destino, userId, dias, orcamento)
-                suggestion = roteiro.sugestao
-                currentRoteiro = roteiro
-            } catch (e: Exception) {
-                errorMessage = e.message ?: "Erro desconhecido"
-                suggestion = ""
-                currentRoteiro = null
-            } finally {
-                isLoading = false
-            }
-        }
-    }
+    val days = calcularDiasViagem(trip.startDate, trip.endDate)
 
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Button(onClick = {
+            isLoading = true
             showDialog = true
-            recusaMode = false
-            motivoRecusa = ""
-            loadRoteiro(trip.destination, trip.username, trip.orcamento)
+            errorMessage = null
+            suggestion = ""
+            extraRequest = ""
+
+            val prompt = "Sugira um roteiro de ${days} ${if (days == 1) "dia" else "dias"} para ${trip.destination} para uma viagem do tipo ${trip.type}, incluindo dicas locais, culinária e pontos turísticos."
+
+            GeminiService.sugerirRoteiro(
+                destino = prompt,
+                onResult = {
+                    suggestion = it
+                    isLoading = false
+                },
+                onError = {
+                    errorMessage = it
+                    isLoading = false
+                }
+            )
         }) {
             Text("Sugestões para ${trip.destination}")
         }
@@ -100,127 +83,94 @@ fun RoadMapSugestionButton(
 
     if (showDialog) {
         AlertDialog(
-            onDismissRequest = {
-                showDialog = false
-                recusaMode = false
-                motivoRecusa = ""
+            onDismissRequest = { showDialog = false },
+            confirmButton = {
+                TextButton(onClick = { showDialog = false }) {
+                    Text("Fechar")
+                }
             },
             title = { Text("Sugestão de Roteiro") },
             text = {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .fillMaxHeight(0.80f)
-                        .verticalScroll(rememberScrollState())
-                        .padding(8.dp)
-                ) {
-                    when {
-                        isLoading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                        errorMessage != null -> Text("Erro: $errorMessage")
-                        recusaMode -> {
-                            Column {
-                                Text("Informe o motivo para recusar ou o que deseja mudar:")
-                                Spacer(modifier = Modifier.height(8.dp))
-                                TextField(
-                                    value = motivoRecusa,
-                                    onValueChange = { motivoRecusa = it },
-                                    placeholder = { Text("Motivo ou alteração") },
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                            }
-                        }
-                        else -> Text(text = suggestion.ifBlank { "Nenhuma sugestão disponível." })
+                if (isLoading) {
+                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
                     }
-                }
-            },
-            confirmButton = {
-                if (recusaMode) {
-                    TextButton(
-                        onClick = {
-                            currentRoteiro?.let {
+                } else if (errorMessage != null) {
+                    Text("Erro: $errorMessage")
+                } else {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 100.dp, max = 400.dp)
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp)
+                                .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
+                                .background(Color(0xFFF7F7F7), RoundedCornerShape(8.dp))
+                                .padding(16.dp)
+                        ) {
+                            Text(text = suggestion)
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Novo campo TextField para pedido extra
+                        OutlinedTextField(
+                            value = extraRequest,
+                            onValueChange = { extraRequest = it },
+                            label = { Text("Peça algo mais (ex: hotéis em X)") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            Button(onClick = {
+                                roteiroViewModel.salvarRoteiro(
+                                    username = trip.username,
+                                    destino = trip.destination,
+                                    sugestao = suggestion
+                                )
+                                Toast.makeText(context, "Roteiro salvo com sucesso!", Toast.LENGTH_SHORT).show()
+                                showDialog = false
+                            }) {
+                                Text("Salvar")
+                            }
+
+                            Button(onClick = {
+                                if (extraRequest.isBlank()) {
+                                    Toast.makeText(context, "Digite um pedido extra para a sugestão", Toast.LENGTH_SHORT).show()
+                                    return@Button
+                                }
                                 isLoading = true
-                                val dias = calcularDias(trip.startDate, trip.endDate)
-                                coroutineScope.launch {
-                                    try {
-                                        roteiroViewModel.recusarERetornarOutro(
-                                            it.destino,
-                                            dias,
-                                            trip.orcamento,
-                                            motivoRecusa,
-                                        )
-                                        currentRoteiro = roteiroViewModel.roteiro.value
-                                        suggestion = currentRoteiro?.sugestao ?: ""
-                                        recusaMode = false
-                                        motivoRecusa = ""
-                                    } catch (e: Exception) {
-                                        Toast.makeText(
-                                            context,
-                                            "Erro ao recusar: ${e.message}",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    } finally {
+                                suggestion = ""
+                                errorMessage = null
+
+                                val prompt = "Sugira um roteiro de ${days} ${if (days == 1) "dia" else "dias"} para ${trip.destination} para uma viagem do tipo ${trip.type}, incluindo dicas locais, culinária e pontos turísticos. Além disso, inclua o seguinte pedido: ${extraRequest}."
+
+                                GeminiService.sugerirRoteiro(
+                                    destino = prompt,
+                                    onResult = {
+                                        suggestion = it
+                                        isLoading = false
+                                    },
+                                    onError = {
+                                        errorMessage = it
                                         isLoading = false
                                     }
-                                }
+                                )
+                            }) {
+                                Text("Gerar nova sugestão")
                             }
-                        },
-                        enabled = motivoRecusa.isNotBlank() && !isLoading
-                    ) {
-                        Text("Enviar")
-                    }
-                } else {
-                    TextButton(
-                        onClick = {
-                            coroutineScope.launch {
-                                try {
-                                    currentRoteiro?.let {
-                                        val roteiroAceito = it.copy(aceito = true)
-                                        if (roteiroAceito.id == 0) {
-                                            roteiroViewModel.aceitarRoteiro(roteiroAceito)
-                                        } else {
-                                            roteiroViewModel.aceitarRoteiro(it)
-                                        }
-                                        Toast.makeText(
-                                            context,
-                                            "Roteiro aceito e salvo!",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                        navController.navigate("roteiroSalvo/${it.destino}")
-                                    }
-                                } catch (e: Exception) {
-                                    Toast.makeText(
-                                        context,
-                                        "Erro ao salvar: ${e.message}",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                } finally {
-                                    showDialog = false
-                                }
-                            }
-                        },
-                        enabled = !isLoading && currentRoteiro != null
-                    ) {
-                        Text("Aceitar e Salvar")
-                    }
-                }
-            },
-            dismissButton = {
-                if (recusaMode) {
-                    TextButton(
-                        onClick = {
-                            recusaMode = false
-                            motivoRecusa = ""
                         }
-                    ) {
-                        Text("Cancelar")
-                    }
-                } else {
-                    TextButton(
-                        onClick = {
-                            recusaMode = true
-                        }
-                    ) {
-                        Text("Recusar e Solicitar Outro")
                     }
                 }
             }
