@@ -1,5 +1,6 @@
 package com.example.roteiroviagem.components
 
+import android.R.attr.maxLines
 import android.os.Build
 import android.util.Log
 import android.widget.Toast
@@ -15,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.roteiroviagem.api.GeminiService
@@ -50,6 +52,8 @@ fun RoadMapSugestionButton(trip: Trip) {
     var suggestion by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
+    val orcamentoFormatado = "%.2f".format(trip.orcamento).replace('.', ',')
+
     val days = calcularDiasViagem(trip.startDate, trip.endDate)
 
     Column(
@@ -63,7 +67,8 @@ fun RoadMapSugestionButton(trip: Trip) {
             suggestion = ""
             extraRequest = ""
 
-            val prompt = "Sugira um roteiro de ${days} ${if (days == 1) "dia" else "dias"} para ${trip.destination} para uma viagem do tipo ${trip.type}, incluindo dicas locais, culinária e pontos turísticos."
+            val prompt = "Sugira um roteiro de ${days} ${if (days == 1) "dia" else "dias"} para ${trip.destination} para uma viagem do tipo ${trip.type}, incluindo dicas locais, culinária e pontos turísticos." +
+                    " Dentro do orçamento total disponível sendo de R$ $orcamentoFormatado. Este valor está em reais, não em milhares."
 
             GeminiService.sugerirRoteiro(
                 destino = prompt,
@@ -121,7 +126,7 @@ fun RoadMapSugestionButton(trip: Trip) {
                         OutlinedTextField(
                             value = extraRequest,
                             onValueChange = { extraRequest = it },
-                            label = { Text("Peça algo mais (ex: hotéis em X)") },
+                            label = { Text("Nova sugestão...") },
                             modifier = Modifier.fillMaxWidth()
                         )
 
@@ -131,7 +136,7 @@ fun RoadMapSugestionButton(trip: Trip) {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 8.dp),
-                            horizontalArrangement = Arrangement.SpaceEvenly
+                            horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)
                         ) {
                             Button(onClick = {
                                 roteiroViewModel.salvarRoteiro(
@@ -141,7 +146,11 @@ fun RoadMapSugestionButton(trip: Trip) {
                                 )
                                 Toast.makeText(context, "Roteiro salvo com sucesso!", Toast.LENGTH_SHORT).show()
                                 showDialog = false
-                            }) {
+                            },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(60.dp) // altura consistente
+                            ) {
                                 Text("Salvar")
                             }
 
@@ -154,7 +163,8 @@ fun RoadMapSugestionButton(trip: Trip) {
                                 suggestion = ""
                                 errorMessage = null
 
-                                val prompt = "Sugira um roteiro de ${days} ${if (days == 1) "dia" else "dias"} para ${trip.destination} para uma viagem do tipo ${trip.type}, incluindo dicas locais, culinária e pontos turísticos. Além disso, inclua o seguinte pedido: ${extraRequest}."
+                                val prompt = "Sugira um roteiro de ${days} ${if (days == 1) "dia" else "dias"} para ${trip.destination} para uma viagem do tipo ${trip.type}, incluindo dicas locais, culinária e pontos turísticos. " +
+                                        "O orçamento total disponível é de R$ $orcamentoFormatado. Este valor está em reais, não em milhares. Além disso, inclua o seguinte pedido: ${extraRequest}."
 
                                 GeminiService.sugerirRoteiro(
                                     destino = prompt,
@@ -167,8 +177,17 @@ fun RoadMapSugestionButton(trip: Trip) {
                                         isLoading = false
                                     }
                                 )
-                            }) {
-                                Text("Gerar nova sugestão")
+                            },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(60.dp), // altura consistente
+                            ){
+                                Box(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text("Gerar nova sugestão")
+                                }
                             }
                         }
                     }
