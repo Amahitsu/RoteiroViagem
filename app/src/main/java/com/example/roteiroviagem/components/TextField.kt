@@ -1,6 +1,7 @@
 package com.example.roteiroviagem.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,58 +21,43 @@ fun MyTextField(
     onValueChange: (String) -> Unit,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     isPassword: Boolean = false,
-    modifier: Modifier = Modifier // Adiciona modifier como parâmetro opcional
+    errorMessage: String? = null,
+    modifier: Modifier = Modifier
 ) {
-    var isTouched = remember {
-        mutableStateOf(false)
-    }
-    var focusRequester = remember {
-        FocusRequester()
+    val isTouched = remember { mutableStateOf(false) }
+    val focusRequester = remember { FocusRequester() }
+
+    val showError = (isTouched.value && value.isBlank()) || errorMessage != null
+
+    val supportingTextMessage = when {
+        isTouched.value && value.isBlank() -> "Campo $label obrigatório"
+        errorMessage != null -> errorMessage
+        else -> ""
     }
 
-    // Se for um campo de senha, aplica a transformação de senha
-    if (isPassword) {
-        OutlinedTextField(
-            value = value,
-            onValueChange = onValueChange,
-            visualTransformation = PasswordVisualTransformation(),
-            singleLine = true,
-            label = { Text(text = label) },
-            modifier = modifier
-                .fillMaxWidth()
-                .focusRequester(focusRequester)
-                .onFocusEvent {
-                    if (it.hasFocus) isTouched.value = true
-                },
-            isError = isTouched.value && value.isBlank(),
-            supportingText = {
-                if (isTouched.value && value.isBlank()) {
-                    Text(text = "Campo ${label} Obrigatório")
-                }
-            }
-        )
-    } else {
-        OutlinedTextField(
-            value = value,
-            onValueChange = {
-                isTouched.value = true
-                onValueChange(it)
+    OutlinedTextField(
+        value = value,
+        onValueChange = {
+            isTouched.value = true
+            onValueChange(it)
+        },
+        visualTransformation = if (isPassword) PasswordVisualTransformation() else visualTransformation,
+        singleLine = true,
+        label = { Text(text = label) },
+        modifier = modifier
+            .fillMaxWidth()
+            .focusRequester(focusRequester)
+            .onFocusEvent {
+                if (it.hasFocus) isTouched.value = true
             },
-            visualTransformation = visualTransformation,
-            singleLine = true,
-            label = { Text(text = label) },
-            modifier = modifier
-                .fillMaxWidth()
-                .focusRequester(focusRequester)
-                .onFocusEvent {
-                    if (it.hasFocus) isTouched.value = true
-                },
-            isError = isTouched.value && value.isBlank(),
-            supportingText = {
-                if (isTouched.value && value.isBlank()) {
-                    Text(text = "Campo ${label} Obrigatório")
-                }
+        isError = showError,
+        supportingText = {
+            if (showError) {
+                Text(
+                    text = supportingTextMessage,
+                    color = MaterialTheme.colorScheme.error
+                )
             }
-        )
-    }
+        }
+    )
 }

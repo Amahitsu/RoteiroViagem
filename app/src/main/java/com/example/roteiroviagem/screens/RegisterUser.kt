@@ -191,6 +191,7 @@ fun RegisterUserField(
                 label = "Email",
                 value = registerUser.value.emailRegister,
                 onValueChange = { registerUserViewModel.onRegisterEmail(it) },
+                errorMessage = registerUser.value.emailError
             )
 
 

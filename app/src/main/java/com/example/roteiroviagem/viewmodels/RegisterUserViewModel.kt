@@ -7,7 +7,6 @@ import com.example.roteiroviagem.dao.UserDao
 import com.example.roteiroviagem.entity.User
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 
@@ -15,13 +14,14 @@ data class RegisterUiState(
     val userRegister: String = "",
     val nameRegister: String = "",
     val emailRegister: String = "",
+    val emailError: String? = null,
     val passwordRegister: String = "",
     val confirmPassword: String = "",
     val passwordError: String? = null,
     val errorMessage: String = "",
     val isFormValid: Boolean = false, // 🔹 Adicionado para indicar se o formulário está válido
-    val isSaved : Boolean = false
-){
+    val isSaved: Boolean = false
+) {
     fun toUser(): User {
         return User(
             user = userRegister,
@@ -52,17 +52,16 @@ class RegisterUserViewModel(
 
     fun onRegisterEmail(email: String) {
         val emailValidator = EmailValidator()
-
-        // Validando o e-mail com a classe separada
         val emailError = emailValidator.validate(email)
 
-        // Atualizando o estado com o e-mail e o erro
         _uiState.value = _uiState.value.copy(
-            emailRegister = email
+            emailRegister = email,
+            emailError = emailError // <- atualiza o estado com o erro
         )
 
         validateForm()
     }
+
 
     fun onRegisterPassword(password: String) {
         _uiState.value = _uiState.value.copy(passwordRegister = password)
@@ -90,10 +89,12 @@ class RegisterUserViewModel(
 
     private fun validateForm() {
         _uiState.value = _uiState.value.copy(
-            isFormValid = _uiState.value.run {
+            isFormValid = _uiState.value.run
+            {
                 userRegister.isNotBlank() &&
                         nameRegister.isNotBlank() &&
                         emailRegister.isNotBlank() &&
+                        emailError == null &&
                         passwordRegister.isNotBlank() &&
                         confirmPassword.isNotBlank() &&
                         passwordError == null
@@ -101,20 +102,19 @@ class RegisterUserViewModel(
         )
     }
 
-    fun register(){
-        try{
+    fun register() {
+        try {
 
             viewModelScope.launch {
                 userDao.insert(_uiState.value.toUser())
                 _uiState.value = _uiState.value.copy(isSaved = true)
             }
-        }
-        catch (e: Exception){
-            _uiState.value = _uiState.value.copy(errorMessage = e.message ?: "Unknow error" )
+        } catch (e: Exception) {
+            _uiState.value = _uiState.value.copy(errorMessage = e.message ?: "Unknow error")
         }
     }
 
-    fun cleanDisplayValues(){
+    fun cleanDisplayValues() {
         _uiState.value = _uiState.value.copy(isSaved = false, errorMessage = "")
     }
 }
