@@ -17,14 +17,20 @@ class RoteiroViewModel(private val repository: RoteiroRepository) : ViewModel() 
             val lista = repository.getRoteirosByUsername(username)
             _roteiros.clear()
             _roteiros.addAll(lista)
-
         }
     }
 
-
-    fun salvarRoteiro(username: String, destino: String, sugestao: String) {
+    fun carregarRoteirosPorTripId(username: String, tripId: Long) {
         viewModelScope.launch {
-            val roteiro = Roteiro(username = username, destino = destino, sugestao = sugestao)
+            val lista = repository.getRoteirosByUsernameAndTripId(username, tripId)
+            _roteiros.clear()
+            _roteiros.addAll(lista)
+        }
+    }
+
+    fun salvarRoteiro(username: String, destino: String, tripId: Int, sugestao: String) {
+        viewModelScope.launch {
+            val roteiro = Roteiro(username = username, destino = destino, tripId = tripId, sugestao = sugestao)
             repository.addRoteiro(roteiro)
             _roteiros.add(roteiro)
         }
@@ -33,7 +39,7 @@ class RoteiroViewModel(private val repository: RoteiroRepository) : ViewModel() 
     fun deletarRoteiro(roteiro: Roteiro) {
         viewModelScope.launch {
             repository.deleteRoteiro(roteiro)
+            _roteiros.remove(roteiro)
         }
     }
-
 }

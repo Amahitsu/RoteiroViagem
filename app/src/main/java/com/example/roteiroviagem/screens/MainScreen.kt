@@ -26,6 +26,7 @@ import com.example.roteiroviagem.viewmodels.TripViewModel
 import com.example.roteiroviagem.viewmodels.TripViewModelFactory
 import com.example.roteiroviagem.R
 import com.example.roteiroviagem.components.RoadMapSugestionButton
+import com.example.roteiroviagem.dao.RoteiroDao
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -38,25 +39,7 @@ fun MainScreen(navController: NavController, username: String) {
     val tripViewModel: TripViewModel = viewModel(factory = TripViewModelFactory(tripDao, username))
     val tripList by tripViewModel.trips.collectAsState()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Minhas Viagens", color = MaterialTheme.colorScheme.onPrimary) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                ),
-                actions = {
-                    TextButton(onClick = {
-                        navController.navigate("login") {
-                            popUpTo("menu") { inclusive = true }
-                        }
-                    }) {
-                        Text("Sair", color = MaterialTheme.colorScheme.onPrimary)
-                    }
-                }
-            )
-        },
-    ) { innerPadding ->
+    Scaffold { innerPadding ->
         Column(
             modifier = Modifier
                 .padding(innerPadding)
@@ -80,13 +63,19 @@ fun MainScreen(navController: NavController, username: String) {
                 }
             } else {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(tripList) { trip ->
+                    items(
+                        items = tripList,
+                        key = { trip -> trip.id }  // chave única obrigatória para evitar bugs de animação
+                    ) { trip ->
                         TripItem(
                             trip = trip,
+                            username = username,
+                            navController = navController,
                             onDelete = { tripViewModel.deleteTrip(trip) },
                             onEdit = { navController.navigate("edit_trip/${trip.id}/$username") }
                         )
                     }
+                
                 }
             }
         }
@@ -97,9 +86,24 @@ fun MainScreen(navController: NavController, username: String) {
 @Composable
 fun TripItem(
     trip: Trip,
+    username: String,
+    navController: NavController,
     onDelete: () -> Unit,
     onEdit: () -> Unit
 ) {
+
+
+    val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+    val iconRes = if (trip.type == "Business") R.drawable.ic_business else R.drawable.ic_leisure
+    var hasRoteiro by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val roteiroDao = remember { AppDatabase.getDatabase(context).roteiroDao() }
+
+    // Buscar no banco se já existe roteiro para esse trip.id
+    LaunchedEffect(trip.id) {
+        hasRoteiro = roteiroDao.existsByTripId(trip.id)
+    }
+
     val dismissState = rememberDismissState(
         confirmValueChange = {
             if (it == DismissValue.DismissedToStart) {
@@ -108,9 +112,6 @@ fun TripItem(
             } else false
         }
     )
-
-    val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-    val iconRes = if (trip.type == "Business") R.drawable.ic_business else R.drawable.ic_leisure
 
     SwipeToDismiss(
         state = dismissState,
@@ -178,7 +179,23 @@ fun TripItem(
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
-                    RoadMapSugestionButton(trip)
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RoadMapSugestionButton(trip)
+                        if (hasRoteiro) {
+                            Button(
+                                onClick = {
+                                    navController.navigate("RoteiroTripScreen/$username/${trip.id}")
+                                }
+                            ) {
+                                Text("Ver Roteiro")
+                            }
+                        }
+                    }
                 }
             }
         }

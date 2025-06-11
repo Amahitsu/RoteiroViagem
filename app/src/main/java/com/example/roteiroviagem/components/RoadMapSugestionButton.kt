@@ -57,7 +57,7 @@ fun RoadMapSugestionButton(trip: Trip) {
     val days = calcularDiasViagem(trip.startDate, trip.endDate)
 
     Column(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.wrapContentWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Button(onClick = {
@@ -142,6 +142,7 @@ fun RoadMapSugestionButton(trip: Trip) {
                                 roteiroViewModel.salvarRoteiro(
                                     username = trip.username,
                                     destino = trip.destination,
+                                    tripId = trip.id,
                                     sugestao = suggestion
                                 )
                                 Toast.makeText(context, "Roteiro salvo com sucesso!", Toast.LENGTH_SHORT).show()

@@ -65,7 +65,7 @@ fun MyApp() {
     val currentDestination = backStack?.destination?.route
 
     val showBottomBar = currentDestination?.startsWith("MainScreen") == true ||
-            currentDestination?.startsWith("ListaRoteirosScreen") == true ||
+            currentDestination?.startsWith("RoteiroTripScreen") == true ||
             currentDestination?.startsWith("About") == true
 
     Scaffold(
@@ -158,7 +158,7 @@ fun MyApp() {
             if (showBottomBar && username.isNotBlank()) {
                 FloatingActionButton(
                     onClick = { navController.navigate("add_trip/$username") },
-                    containerColor = MaterialTheme.colorScheme.primary
+                    containerColor = MaterialTheme.colorScheme.onPrimary
                 ) {
                     Icon(Icons.Filled.Add, contentDescription = "Adicionar Viagem")
                 }
@@ -211,9 +211,21 @@ fun MyApp() {
 
             composable("ListaRoteirosScreen/{username}") { backStackEntry ->
                 val username = backStackEntry.arguments?.getString("username") ?: ""
-                ListaRoteirosScreen(username = username) {
-                    navController.popBackStack()
-                }
+                ListaRoteirosScreen(
+                    username = username,
+                    onBack = { navController.popBackStack() }
+                )
+            }
+
+            composable("RoteiroTripScreen/{username}/{tripId}") { backStackEntry ->
+                val username = backStackEntry.arguments?.getString("username") ?: ""
+                val tripId = backStackEntry.arguments?.getString("tripId")?.toLongOrNull() ?: return@composable
+
+                RoteiroTripScreen(
+                    username = username,
+                    tripId = tripId,
+                    onBack = { navController.popBackStack() }
+                )
             }
         }
     }
